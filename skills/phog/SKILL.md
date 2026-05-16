@@ -44,6 +44,7 @@ The project-level `phc_*` write key (the one your JS SDK uses) is **not** valid 
 - **Default JSON when piped.** Pass `--human` to force tables in a pipe.
 - **`--compact`** keeps only high-gravity fields (id, name, status, primary timestamp) — ~60–80% fewer tokens.
 - **`--select=field1,field2`** for explicit projection (e.g. `--select=event,timestamp,distinct_id`).
+- **Null keys are stripped by default** (PostHog returns many `"foo": null` fields, especially inside `properties` — ~30–50% fewer tokens on persons/events). Pass `--keep-nulls` if you need to distinguish explicit-null from missing.
 - **Exit codes:**
   - `0` ok
   - `2` usage error — fix invocation

@@ -19,20 +19,21 @@ type ExitCoder interface {
 
 var (
 	// Persistent flags — available on every subcommand.
-	flagJSON    bool
-	flagHuman   bool
-	flagCSV     bool
-	flagCompact bool
-	flagSelect  string
-	flagAccount string
-	flagProfile string
-	flagQuiet   bool
-	flagVerbose bool
-	flagDebug   bool
-	flagNoInput bool
-	flagYes     bool
-	flagForce   bool
-	flagDryRun  bool
+	flagJSON      bool
+	flagHuman     bool
+	flagCSV       bool
+	flagCompact   bool
+	flagSelect    string
+	flagKeepNulls bool
+	flagAccount   string
+	flagProfile   string
+	flagQuiet     bool
+	flagVerbose   bool
+	flagDebug     bool
+	flagNoInput   bool
+	flagYes       bool
+	flagForce     bool
+	flagDryRun    bool
 
 	// Set by goreleaser via -ldflags.
 	version = "dev"
@@ -85,6 +86,7 @@ func init() {
 	pf.BoolVar(&flagCSV, "csv", false, "emit CSV with header row")
 	pf.BoolVar(&flagCompact, "compact", false, "drop to high-gravity fields only (id, name, status, primary timestamp)")
 	pf.StringVar(&flagSelect, "select", "", "comma-separated field projection (e.g. --select=id,name)")
+	pf.BoolVar(&flagKeepNulls, "keep-nulls", false, "keep null-valued keys in output (default: stripped to save tokens)")
 	pf.StringVar(&flagAccount, "account", os.Getenv("PHOG_ACCOUNT"), "account to use (env: PHOG_ACCOUNT)")
 	pf.StringVar(&flagProfile, "profile", "", "named profile of saved configuration")
 	pf.BoolVarP(&flagQuiet, "quiet", "q", false, "suppress progress output on stderr")
@@ -102,14 +104,15 @@ func init() {
 func bindFlagsAndProfile(cmd *cobra.Command, args []string) error {
 	// 1. Resolve output mode: explicit flag > TTY detection > default JSON when piped.
 	output.Configure(output.Options{
-		JSON:    flagJSON,
-		Human:   flagHuman,
-		CSV:     flagCSV,
-		Compact: flagCompact,
-		Select:  flagSelect,
-		Quiet:   flagQuiet,
-		Verbose: flagVerbose,
-		Debug:   flagDebug,
+		JSON:      flagJSON,
+		Human:     flagHuman,
+		CSV:       flagCSV,
+		Compact:   flagCompact,
+		Select:    flagSelect,
+		KeepNulls: flagKeepNulls,
+		Quiet:     flagQuiet,
+		Verbose:   flagVerbose,
+		Debug:     flagDebug,
 	})
 	// 2. Resolve identity: --profile -> --account -> $PHOG_ACCOUNT -> stored default.
 	return config.Resolve(flagProfile, flagAccount)

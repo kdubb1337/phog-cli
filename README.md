@@ -71,6 +71,7 @@ Precedence (highest wins): `--profile` flag → `PHOG_*` env vars → active pro
 - stdout = data, stderr = humans
 - Auto-JSON when piped; `--human` forces tables in a pipe
 - `--compact` for high-gravity fields only; `--select` for explicit projection
+- Null-valued keys stripped by default (use `--keep-nulls` to preserve them)
 - Exit codes: `0` ok, `2` usage, `3` not-found, `4` auth, `5` api, `6` conflict, `7` rate-limit, `8` network, `9` validation, `124` timeout
 
 See `phog agent-context` for the full schema.

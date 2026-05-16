@@ -28,6 +28,7 @@ type Options struct {
 	JSON, Human, CSV      bool
 	Compact               bool
 	Select                string
+	KeepNulls             bool
 	Quiet, Verbose, Debug bool
 }
 
@@ -111,9 +112,51 @@ func EmitDryRun(v any) error {
 // --- helpers ----------------------------------------------------------------
 
 func emitJSON(v any) error {
+	if !cfg.KeepNulls {
+		v = stripNullsForJSON(v)
+	}
 	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
+}
+
+// stripNullsForJSON round-trips v through json.Marshal/Unmarshal so it becomes
+// a tree of map[string]any / []any / scalars, then drops nil-valued keys from
+// every object at any depth. Array nulls and empty objects/arrays are preserved
+// (positional info in arrays; "this key exists but is empty" in objects).
+//
+// This is invoked from JSON/human paths only — CSV needs a fixed-width schema.
+func stripNullsForJSON(v any) any {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return v
+	}
+	var tree any
+	if err := json.Unmarshal(b, &tree); err != nil {
+		return v
+	}
+	return stripNulls(tree)
+}
+
+func stripNulls(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		cleaned := make(map[string]any, len(x))
+		for k, val := range x {
+			if val == nil {
+				continue
+			}
+			cleaned[k] = stripNulls(val)
+		}
+		return cleaned
+	case []any:
+		for i, item := range x {
+			x[i] = stripNulls(item)
+		}
+		return x
+	default:
+		return v
+	}
 }
 
 func emitCSV(v any) error {
