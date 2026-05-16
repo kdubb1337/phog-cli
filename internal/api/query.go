@@ -5,15 +5,20 @@ import (
 )
 
 // HogQLResult is the response shape from /api/projects/{id}/query for HogQLQuery kind.
+//
+// Two PostHog quirks worth knowing:
+//   - `types` is returned as an array of [columnName, clickhouseType] pairs,
+//     not a flat []string. Decoded here as [][]string.
+//   - The pagination flag is `hasMore` (camelCase), not `has_more`.
 type HogQLResult struct {
-	Columns     []string `json:"columns"`
-	Types       []string `json:"types,omitempty"`
-	Results     [][]any  `json:"results"`
-	HogQL       string   `json:"hogql,omitempty"`
-	Modifiers   any      `json:"modifiers,omitempty"`
-	HasMore     bool     `json:"has_more,omitempty"`
-	Timings     any      `json:"timings,omitempty"`
-	QueryStatus any      `json:"query_status,omitempty"`
+	Columns     []string   `json:"columns"`
+	Types       [][]string `json:"types,omitempty"`
+	Results     [][]any    `json:"results"`
+	HogQL       string     `json:"hogql,omitempty"`
+	Modifiers   any        `json:"modifiers,omitempty"`
+	HasMore     bool       `json:"hasMore,omitempty"`
+	Timings     any        `json:"timings,omitempty"`
+	QueryStatus any        `json:"query_status,omitempty"`
 }
 
 type hogqlEnvelope struct {
