@@ -7,13 +7,16 @@ import (
 )
 
 // Person mirrors PostHog's /api/projects/{id}/persons response shape.
+// PostHog returns the `id` field as a UUID string (not the old integer ID).
 type Person struct {
-	ID          int            `json:"id"`
+	Type        string         `json:"type,omitempty"`
+	ID          string         `json:"id"`
 	UUID        string         `json:"uuid"`
-	DistinctIDs []string       `json:"distinct_ids"`
+	DistinctIDs []string       `json:"distinct_ids,omitempty"`
 	Name        string         `json:"name,omitempty"`
 	Properties  map[string]any `json:"properties,omitempty"`
 	CreatedAt   string         `json:"created_at"`
+	LastSeenAt  string         `json:"last_seen_at,omitempty"`
 }
 
 type PersonsListParams struct {
