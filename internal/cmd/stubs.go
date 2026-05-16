@@ -41,12 +41,16 @@ var doctorCmd = &cobra.Command{
 		}
 		s := config.Get()
 		report := struct {
-			OK     bool    `json:"ok"`
-			Host   string  `json:"host"`
-			Checks []check `json:"checks"`
+			OK         bool    `json:"ok"`
+			Host       string  `json:"host"`
+			Profile    string  `json:"profile,omitempty"`
+			ConfigPath string  `json:"config_path,omitempty"`
+			Checks     []check `json:"checks"`
 		}{
-			OK:   true,
-			Host: s.Host,
+			OK:         true,
+			Host:       s.Host,
+			Profile:    s.Profile,
+			ConfigPath: s.ConfigPath,
 		}
 		add := func(c check) {
 			if c.Status != "ok" {
@@ -151,43 +155,7 @@ func describeCommands(c *cobra.Command) []map[string]any {
 	return out
 }
 
-// --- profile ----------------------------------------------------------------
-
-var profileCmd = &cobra.Command{
-	Use:   "profile",
-	Short: "Manage named configuration profiles",
-}
-
-var profileListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List saved profiles",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return output.Emit(map[string]any{
-			"profiles": []string{},
-			"hint":     "no profiles saved; create one with: phog profile save <name>",
-		})
-	},
-}
-
-// Stubs for save/use/show/delete go here; same pattern.
-
-// --- auth -------------------------------------------------------------------
-
-var authCmd = &cobra.Command{
-	Use:   "auth",
-	Short: "Manage credentials and accounts",
-}
-
-var authListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List configured accounts",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return output.Emit(map[string]any{
-			"accounts": []string{},
-			"hint":     "no accounts configured; add one with: phog auth add <id>",
-		})
-	},
-}
+// (profile and auth commands live in profile.go / auth.go)
 
 // --- skill ------------------------------------------------------------------
 //
@@ -603,9 +571,6 @@ var skillListCmd = &cobra.Command{
 }
 
 func init() {
-	profileCmd.AddCommand(profileListCmd)
-	authCmd.AddCommand(authListCmd)
-
 	skillInstallCmd.Flags().StringVar(&flagSkillInstallMode, "mode", "symlink", "install mode: symlink|copy")
 	skillInstallCmd.Flags().BoolVar(&flagSkillInstallAll, "all", false, "install to every known agent in the registry")
 	skillInstallCmd.Flags().StringVar(&flagSkillInstallDir, "dir", "", "additional custom skills directory to install into")
@@ -616,5 +581,5 @@ func init() {
 	// mode validation without exposing the flag here.
 
 	skillCmd.AddCommand(skillPathCmd, skillInstallCmd, skillUninstallCmd, skillListCmd)
-	rootCmd.AddCommand(doctorCmd, agentContextCmd, profileCmd, authCmd, skillCmd)
+	rootCmd.AddCommand(doctorCmd, agentContextCmd, skillCmd)
 }

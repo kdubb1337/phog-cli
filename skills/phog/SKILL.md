@@ -14,21 +14,29 @@ Use `phog` to query a PostHog project for events, web activity (`$pageview`), sa
 
 Also grab your **project ID** from the URL (`/project/<ID>/...`).
 
-```
-export PHOG_API_KEY=phx_yourtoken
-export PHOG_PROJECT_ID=12345
-export PHOG_HOST=https://us.posthog.com   # or https://eu.posthog.com, or self-hosted
-phog doctor                                # verify config + creds + API reach
-```
-
-Or persist the key:
+Persist credentials to a profile (recommended — survives shells, no env vars needed):
 
 ```
-phog auth add phx_yourtoken --profile default
-phog auth list
+phog auth add phx_yourtoken --project 12345                      # US cloud (default)
+phog auth add phx_yourtoken --project 12345 --host https://eu.posthog.com   # EU cloud
+phog auth add --project 12345                                    # interactive prompt
+op read "op://Personal/PostHog/token" | phog auth add --project 12345  # from secret mgr
+phog doctor                                                       # verify creds + project reachability
 ```
 
-The project-level `phc_*` write key (the one your JS SDK uses) is **not** valid here — it can only ingest, not query.
+Config lives at `~/.phog/config.json` (mode 0600). Multi-profile is supported:
+
+```
+phog auth add phx_prodtoken --project 99999 --profile prod --host https://eu.posthog.com
+phog profile use prod              # switch active
+phog --profile prod events list    # one-off override without switching
+phog profile list                  # tokens redacted as phx_…<last-4>
+phog auth remove prod --force
+```
+
+Env vars `PHOG_API_KEY`, `PHOG_PROJECT_ID`, `PHOG_HOST` still work and override the active profile per-call. Precedence (highest wins): `--profile` flag → env vars → active profile → profile named `default`.
+
+The project-level `phc_*` write key (the one your JS SDK uses) is **not** valid here — it can only ingest, not query. Always use a `phx_*` Personal API key.
 
 ## Output rules (for agents)
 

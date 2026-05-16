@@ -29,23 +29,42 @@ Find your **project ID** in the URL after switching projects: `https://us.postho
 
 ## Quick start
 
-```
-export PHOG_API_KEY=phx_yourtoken
-export PHOG_PROJECT_ID=12345
-export PHOG_HOST=https://us.posthog.com   # or https://eu.posthog.com, or self-hosted
+Persist the token + project ID to a profile (recommended — no env vars needed for future calls):
 
-phog doctor
+```
+phog auth add phx_yourtoken --project 12345
+# or with an explicit host (EU cloud / self-hosted):
+phog auth add phx_yourtoken --project 12345 --host https://eu.posthog.com
+# interactive (paste the token at the prompt):
+phog auth add --project 12345
+# from a secret manager:
+op read "op://Personal/PostHog/token" | phog auth add --project 12345
+
+phog doctor                       # verifies creds + project reachability
 phog events list --limit 10 --json
-phog events list --event '$pageview' --after 24h --json
+phog events list --pageviews --after 24h --json
 phog query "SELECT event, count() FROM events WHERE timestamp > now() - INTERVAL 1 DAY GROUP BY event ORDER BY count() DESC LIMIT 20"
 ```
 
-Or persist the key as a profile:
+The config lives at `~/.phog/config.json` (mode 0600). Manage multiple profiles:
 
 ```
-phog auth add phx_yourtoken --profile default
+phog auth add phx_prodtoken --project 99999 --host https://eu.posthog.com --profile prod
+phog profile use prod             # switch active
+phog --profile prod doctor        # one-off override without switching active
 phog profile list
+phog auth remove prod --force
 ```
+
+If you prefer env vars, they still work and override the active profile per-call:
+
+```
+export PHOG_API_KEY=phx_yourtoken
+export PHOG_PROJECT_ID=12345
+export PHOG_HOST=https://us.posthog.com
+```
+
+Precedence (highest wins): `--profile` flag → `PHOG_*` env vars → active profile → profile named `default` → zero values.
 
 ## Output rules
 
