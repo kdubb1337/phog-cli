@@ -42,8 +42,16 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "phog",
-	Short: "Agent-native CLI for <service>", // TODO(service): replace
-	Long: `phog is a hand-crafted, agent-native CLI for <service>.
+	Short: "Agent-native CLI for PostHog (events, web activity, insights, persons, HogQL)",
+	Long: `phog is a hand-crafted, agent-native CLI for PostHog.
+
+It wraps the PostHog REST API and HogQL query endpoint so agents can query
+events, $pageview-style web activity, saved insights, persons, and run
+arbitrary HogQL — all with deterministic output, typed exit codes, and
+--dry-run on every mutation.
+
+The binary is intentionally named "phog" (not "posthog") to avoid colliding
+with PostHog's official posthog-cli (Rust) on PATH.
 
 Output rules:
   - stdout is data; stderr is human progress and errors.

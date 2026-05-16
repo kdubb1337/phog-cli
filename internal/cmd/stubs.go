@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/kdubb1337/phog-cli/internal/api"
+	"github.com/kdubb1337/phog-cli/internal/config"
 	"github.com/kdubb1337/phog-cli/internal/output"
 )
 
@@ -28,8 +30,8 @@ import (
 // --- doctor -----------------------------------------------------------------
 
 var doctorCmd = &cobra.Command{
-	Use:   "doctor",
-	Short: "Health check: config, credentials, API reachability",
+	Use:     "doctor",
+	Short:   "Health check: config, credentials, API reachability",
 	Example: `  phog doctor --json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		type check struct {
@@ -37,16 +39,48 @@ var doctorCmd = &cobra.Command{
 			Status string `json:"status"`
 			Detail string `json:"detail,omitempty"`
 		}
+		s := config.Get()
 		report := struct {
 			OK     bool    `json:"ok"`
+			Host   string  `json:"host"`
 			Checks []check `json:"checks"`
 		}{
-			OK: true,
-			Checks: []check{
-				{Name: "config", Status: "ok"},
-				{Name: "credentials", Status: "skipped", Detail: "no auth backend wired yet"},
-				{Name: "api_reachable", Status: "skipped", Detail: "no API client wired yet"},
-			},
+			OK:   true,
+			Host: s.Host,
+		}
+		add := func(c check) {
+			if c.Status != "ok" {
+				report.OK = false
+			}
+			report.Checks = append(report.Checks, c)
+		}
+		if s.APIKey == "" {
+			add(check{Name: "api_key", Status: "missing", Detail: "set PHOG_API_KEY=phx_..."})
+		} else if !strings.HasPrefix(s.APIKey, "phx_") {
+			add(check{Name: "api_key", Status: "warn", Detail: "key does not start with 'phx_' (project keys 'phc_*' can only ingest, not query)"})
+		} else {
+			add(check{Name: "api_key", Status: "ok"})
+		}
+		if s.ProjectID == "" {
+			add(check{Name: "project_id", Status: "missing", Detail: "set PHOG_PROJECT_ID=<numeric id>"})
+		} else {
+			add(check{Name: "project_id", Status: "ok", Detail: s.ProjectID})
+		}
+		if s.APIKey != "" && s.ProjectID != "" {
+			c, err := api.New()
+			if err != nil {
+				add(check{Name: "api_reachable", Status: "error", Detail: err.Error()})
+			} else {
+				proj, err := c.ProjectGet(cmd.Context())
+				if err != nil {
+					add(check{Name: "api_reachable", Status: "error", Detail: err.Error()})
+				} else {
+					name, _ := proj["name"].(string)
+					add(check{Name: "api_reachable", Status: "ok", Detail: "project: " + name})
+				}
+			}
+		} else {
+			add(check{Name: "api_reachable", Status: "skipped", Detail: "needs api_key + project_id"})
 		}
 		return output.Emit(report)
 	},
@@ -351,11 +385,11 @@ func runSkillInstall(args []string, remove bool) error {
 		verb = "uninstall"
 	}
 	payload := map[string]any{
-		"action":      verb,
-		"mode":        flagSkillInstallMode,
-		"source":      srcDir,
-		"dry_run":     flagDryRun,
-		"results":     results,
+		"action":  verb,
+		"mode":    flagSkillInstallMode,
+		"source":  srcDir,
+		"dry_run": flagDryRun,
+		"results": results,
 	}
 	if flagDryRun {
 		return output.EmitDryRun(payload)

@@ -63,7 +63,7 @@ brews:
       owner: kdubb1337
       name: homebrew-tap
     homepage: "https://github.com/kdubb1337/phog-cli"
-    description: "Agent-native CLI for <service>" # TODO(service): replace before first release
+    description: "Agent-native CLI for PostHog — query events, web activity, insights, and persons via the PostHog API"
     license: "MIT"
     test: |
       system "#{bin}/phog", "--version"

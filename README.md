@@ -1,6 +1,8 @@
 # phog
 
-Agent-native CLI for <service>. <!-- TODO(service): replace -->
+Agent-native CLI for [PostHog](https://posthog.com) — query events, web activity (`$pageview`), saved insights, persons, and run arbitrary HogQL against your project.
+
+The binary is intentionally named `phog` (not `posthog`) to avoid colliding with PostHog's official [`posthog-cli`](https://github.com/PostHog/posthog-cli) (Rust) on PATH.
 
 ## Install
 
@@ -10,25 +12,38 @@ brew install kdubb1337/tap/phog
 go install github.com/kdubb1337/phog-cli/cmd/phog@latest
 ```
 
-## Getting an API key <!-- TODO(auth): replace with the real flow, or delete this section if the service is unauthenticated -->
+## Getting an API key
 
-1. Sign in to <service> at <URL>.
-2. Open **<Settings → API Keys path>**: <link to the exact page>.
-3. Create a new token; choose **<the minimum scope/permission this CLI needs>** (note what additional scopes unlock; e.g. read-only blocks mutations).
-4. Copy the token (it usually starts with `<prefix>_`) — most services show it **only once**, so save it to your password manager.
+PostHog uses **Personal API keys** (scoped, per-user tokens) for the REST API and HogQL query endpoint. The project's `phc_*` write key used by the JS/SDK ingest path will NOT work here.
+
+1. Sign in to PostHog (US cloud: <https://us.posthog.com>, EU cloud: <https://eu.posthog.com>, or your self-hosted host).
+2. Open **Settings → Personal API keys**: <https://us.posthog.com/settings/user-api-keys> (EU: <https://eu.posthog.com/settings/user-api-keys>).
+3. Click **Create personal API key**, give it a label (e.g. `phog-cli`), and grant the **read scopes** you need. For this CLI's default verbs:
+   - `query:read` — required for `phog query` (HogQL) and event listing
+   - `insight:read` — required for `phog insights`
+   - `person:read` — required for `phog persons`
+   - `project:read` — required for `phog doctor` project verification
+4. Copy the token (starts with `phx_`). **PostHog shows it only once** — save it to your password manager.
+
+Find your **project ID** in the URL after switching projects: `https://us.posthog.com/project/<PROJECT_ID>/...`. Or via `phog doctor` once `PHOG_API_KEY` is set.
 
 ## Quick start
 
 ```
-export PHOG_API_KEY=<your-token>
+export PHOG_API_KEY=phx_yourtoken
+export PHOG_PROJECT_ID=12345
+export PHOG_HOST=https://us.posthog.com   # or https://eu.posthog.com, or self-hosted
+
 phog doctor
-phog <resource> list --json
+phog events list --limit 10 --json
+phog events list --event '$pageview' --after 24h --json
+phog query "SELECT event, count() FROM events WHERE timestamp > now() - INTERVAL 1 DAY GROUP BY event ORDER BY count() DESC LIMIT 20"
 ```
 
 Or persist the key as a profile:
 
 ```
-phog auth add <token> --profile default
+phog auth add phx_yourtoken --profile default
 phog profile list
 ```
 
